@@ -20,21 +20,16 @@ void main() {
     return store;
   }
 
-  test('default visibility hides restricted sources', () async {
+  test('default visibility shows every compiled source', () async {
     final store = await create();
     expect(store.sourceGateEnabled, isFalse);
-    expect(store.sourcesUnlocked, isFalse);
-    expect(
-      store.sources.map((site) => site.id),
-      allSourcesEnabled
-          ? ['hongguo', 'hanxiaoquan', 'guipian', 'sorani']
-          : ['hongguo'],
-    );
-    expect(store.allowsSource('huangdou'), isFalse);
+    expect(store.sourcesUnlocked, isTrue);
+    expect(store.sources.length, allSourcesEnabled ? 11 : 1);
+    expect(store.allowsSource('huangdou'), allSourcesEnabled);
     expect(store.allowsSource('hongguo'), isTrue);
     // 未启用密码锁时无处输入密码，需要先在弹窗里启用。
     await expectLater(store.unlockSources('666'), throwsStateError);
-    expect(store.sourcesUnlocked, isFalse);
+    expect(store.sourcesUnlocked, isTrue);
   });
 
   test('enabling the gate hides restricted sources and unlocks once', () async {
@@ -111,7 +106,7 @@ void main() {
     expect(gate.register(2), isTrue);
   });
 
-  test('a damaged gate record keeps hiding restricted sources', () async {
+  test('a damaged gate record restores full source visibility', () async {
     final store = await create({
       'sourceGateEnabled': true,
       'sourceGateSalt': 'bad',
@@ -119,8 +114,8 @@ void main() {
     });
     expect(store.configurationError, isNull);
     expect(store.sourceGateEnabled, isFalse);
-    expect(store.sourcesUnlocked, isFalse);
-    expect(store.sources.length, allSourcesEnabled ? 4 : 1);
+    expect(store.sourcesUnlocked, isTrue);
+    expect(store.sources.length, allSourcesEnabled ? 11 : 1);
   });
 
   test('a user-disabled gate keeps every compiled source visible', () async {
